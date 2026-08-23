@@ -36,13 +36,6 @@ float Engine::getTerminalWidth()
     return (float)size.ws_col;
 }
 
-/* rendering methods */
-void Engine::print(const std::string &input, const int &x, const int &y)
-{
-    std::print("\033[{};{}H", y, x); // reversed cuz the syntax is {ROW};{COL}
-    std::print("{}", input);
-    fflush(stdout);
-}
 void Engine::clearScreen()
 {
     std::print("\033[2J"); // clear screen

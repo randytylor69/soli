@@ -4,6 +4,7 @@
 #include <termios.h>
 #include <string>
 #include <vector>
+#include <print>
 
 struct Vec3{
     float x, y, z;
@@ -30,7 +31,11 @@ class Engine
 	float getTerminalWidth();
 		
 	/* rendering methods */
-	void print(const std::string &input, const int &x, const int &y);
+	template <typename autoInputType>
+	void print(const autoInputType &input, const int &x, const int &y)
+	{
+	    std::print("\033[{};{}H{}", y, x, input); fflush(stdout);
+	}
 	void clearScreen();
 	Vec3 getCrossProduct(Vec3 v, Vec3 w);
 	float getDotProduct(Vec3 v, Vec3 w);
