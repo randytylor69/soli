@@ -172,3 +172,14 @@ std::vector<std::vector<char>> Engine::drawTerminalBorder(char symbol)
     }
     return m;
 }
+void Engine::drawHorizontalSmoothLine(int colStart, int colFinish, int row){
+    for (int i=colStart; i<colFinish; i++){
+	print("─", i, row);
+    }
+}
+
+void Engine::drawVerticalSmoothLine(int rowStart, int rowFinish, int col){
+    for (int i=rowStart; i<rowFinish; i++){
+	print("│", col, i);
+    }
+}

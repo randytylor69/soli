@@ -47,7 +47,9 @@ class Engine
 	void drawFlatTopTriangle(Vec2 bottom, Vec2 top1, Vec2 top2, char symbol);
 	void drawTriangle(Vec2 inputV0, Vec2 inputV1, Vec2 inputV2, char symbol);
 	std::vector<std::vector<char>> drawTerminalBorder(char symbol = 'D');
-
+	/* GUI drawing methods (smooth) */
+	void drawHorizontalSmoothLine(int colStart, int colFinish, int row);
+	void drawVerticalSmoothLine(int rowStart, int rowFinish, int col);
 };
 
 

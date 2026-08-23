@@ -3,9 +3,11 @@
 #include <string>
 #include <vector>
 #include <print>
-#include <fstream>
+#include <fstream> // read all line of a file
+#include <filesystem> // read all file of a dir
+#include <typeinfo>
 
-#define SCREEN_COLS 85
+#define SCREEN_COLS 94
 #define SCREEN_ROWS 40
 
 using namespace std;
@@ -18,6 +20,28 @@ vector<string> TEMP_albums{
     HOME + "/Music/Les_Failles_2019/",
     HOME + "/Music/Suite_bergamasque_1905/",
 };
+
+void drawSongsOfAlbum(string albumDir){
+    int rowCount = 6;
+    int songCount = 1;
+    for (auto &file : filesystem::directory_iterator(albumDir)){
+	/* trim & adjust file name */
+	string fname = file.path().filename().string();
+	if (fname.substr(fname.length()-4, 4) != ".mp3") continue;
+	fname = fname.substr(0, fname.length()-4); // rm extension
+	if (fname.length() > 45) {
+	    fname = fname.substr(0, 44) + "...";
+	}
+	string songOrder = to_string(songCount) + (
+	    songCount < 10 ? "... " : ".. "	
+	);
+	engine.print(
+	    songOrder+"\033[97m"+fname+"\033[0m",
+	    3, rowCount);
+	rowCount++;
+	songCount++;
+    }
+}
 
 void drawCurrentSong(){
 
@@ -32,16 +56,7 @@ void drawCurrentSong(){
     engine.print("by "+artistName, SCREEN_COLS-artistName.length()-3, 2);
 }
 
-void drawHorizontalSeparator(){
-    for (int i=3; i<SCREEN_COLS-1; i++){
-	engine.print("─", i, 5);
-    }
-}
-
 void drawVerticalSeparator(){
-    for (int i=6; i<SCREEN_ROWS; i++){
-	engine.print("│", SCREEN_COLS/2+6, i);
-    }
 }
 
 void drawAlbums(const vector<string> &albums){
@@ -60,11 +75,11 @@ void drawAlbums(const vector<string> &albums){
 	ifstream f(album+"metadata.txt");
 	string l;
 	while(getline(f, l)){
+	    if (l.length() > 20) {
+		l = l.substr(0, 19) + "...";
+	    }
 	    if (infoCount==0){
 		/* album name is bold + bright white */
-		if (l.length() > 20) {
-		    l = l.substr(0, 19) + "...";
-		}
 		engine.print("\033[97m\033[1m"+l+"\033[0m", SCREEN_COLS-26, rowStart);
 	    } else {
 		/* rest of the info is italic + mute */
@@ -83,16 +98,17 @@ int main(){
     engine.clearScreen();
 
     /* Preliminary check on screen size */
-    if (engine.getTerminalHeight()<40 || engine.getTerminalWidth()<85){
-	printf("Program failed: terminal size too small for the UI. Need at least 85 columns and 40 rows, else it's GG\n");
+    if (engine.getTerminalHeight()<40 || engine.getTerminalWidth()<94){
+	printf("Program failed: terminal size too small for the UI. Need at least 94 columns and 40 rows, else it's GG\n");
 	engine.setCanonicalAndCursor(1);
 	return 0;
     }
     drawCurrentSong();
-    drawHorizontalSeparator();
-    drawVerticalSeparator();
+    engine.drawHorizontalSmoothLine(3, SCREEN_COLS, 5);
+    engine.drawVerticalSmoothLine(6, SCREEN_ROWS, SCREEN_COLS/2+10);
     drawAlbums(TEMP_albums);
 
+    drawSongsOfAlbum(TEMP_albums[0]);
     printf("\n\n\n\n\n\n");
     engine.setCanonicalAndCursor(1);
     return 0;
