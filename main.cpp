@@ -7,13 +7,13 @@
 #include <filesystem> // read all file of a dir
 #include <typeinfo>
 
-#define SCREEN_COLS 94
-#define SCREEN_ROWS 40
 
 using namespace std;
 
 Engine engine;
 const string HOME = getenv("HOME");
+static const int SCREEN_COLS = engine.getTerminalWidth();
+static const int SCREEN_ROWS = engine.getTerminalHeight();
 
 vector<string> TEMP_albums{
     HOME + "/Music/Amore_1982/",
@@ -23,11 +23,12 @@ vector<string> TEMP_albums{
 
 void drawSongsOfAlbum(string albumDir){
     int rowCount = 6;
-    int songCount = 1;
+    int songCount = 0;
     for (auto &file : filesystem::directory_iterator(albumDir)){
 	/* trim & adjust file name */
 	string fname = file.path().filename().string();
 	if (fname.substr(fname.length()-4, 4) != ".mp3") continue;
+	songCount++;
 	fname = fname.substr(0, fname.length()-4); // rm extension
 	if (fname.length() > 45) {
 	    fname = fname.substr(0, 44) + "...";
@@ -39,7 +40,10 @@ void drawSongsOfAlbum(string albumDir){
 	    songOrder+"\033[97m"+fname+"\033[0m",
 	    3, rowCount);
 	rowCount++;
-	songCount++;
+    }
+    /* in case of empty album */
+    if (songCount==0) {
+	engine.print("This album is currently empty ~", 3, rowCount);
     }
 }
 
@@ -56,8 +60,6 @@ void drawCurrentSong(){
     engine.print("by "+artistName, SCREEN_COLS-artistName.length()-3, 2);
 }
 
-void drawVerticalSeparator(){
-}
 
 void drawAlbums(const vector<string> &albums){
 
@@ -98,17 +100,17 @@ int main(){
     engine.clearScreen();
 
     /* Preliminary check on screen size */
-    if (engine.getTerminalHeight()<40 || engine.getTerminalWidth()<94){
+    if (SCREEN_ROWS<40 || SCREEN_COLS<94){
 	printf("Program failed: terminal size too small for the UI. Need at least 94 columns and 40 rows, else it's GG\n");
 	engine.setCanonicalAndCursor(1);
 	return 0;
     }
     drawCurrentSong();
     engine.drawHorizontalSmoothLine(3, SCREEN_COLS, 5);
-    engine.drawVerticalSmoothLine(6, SCREEN_ROWS, SCREEN_COLS/2+10);
+    engine.drawVerticalSmoothLine(6, SCREEN_ROWS, SCREEN_COLS-37);
     drawAlbums(TEMP_albums);
 
-    drawSongsOfAlbum(TEMP_albums[0]);
+    drawSongsOfAlbum(TEMP_albums[1]);
     printf("\n\n\n\n\n\n");
     engine.setCanonicalAndCursor(1);
     return 0;
