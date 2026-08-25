@@ -1,5 +1,5 @@
 main.out: main.o termigine.o soli.o
-	g++ -std=c++23 main.o termigine.o soli.o -o main.out
+	g++ -std=c++23 -lpthread -ldl -lm main.o termigine.o soli.o -o main.out
 
 main.o: main.cpp termigine.h soli.h
 	g++ -std=c++23 -c main.cpp -o main.o

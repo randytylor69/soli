@@ -1,5 +1,7 @@
+#define MINIAUDIO_IMPLEMENTATION
 #include "termigine.h"
 #include "soli.h"
+#include "miniaudio.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -11,7 +13,11 @@
 #include <unistd.h>
 #include <cmath>
 #include <filesystem>
+
 using namespace std;
+
+ma_engine miniaudio;
+ma_sound currentSound;
 
 Engine engine;
 Controller controller;
@@ -39,58 +45,13 @@ char currMode = 1; // INDEX of the above string
  *
  */
 
-void loadAlbums(vector<Album> &albums, vector<string> album_paths){
-    for (const string &path : album_paths){
-
-	/* 1. Get album art escape sequence to cache */
-	string cmd ="chafa --format=kitty -s 7x7 "+path+"cover.jpg"; 
-	array<char, 128> buffer;
-	string result;
-	auto pipeCloser = [](FILE* fp) { (void)pclose(fp); };
-	unique_ptr<FILE, decltype(pipeCloser)> pipe(popen(cmd.c_str(), "r"), pipeCloser);
-	while(fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get())!=nullptr){
-	    result+=buffer.data();
-	}
-
-	/* 2. Get album name + artist + year */
-	vector<string> albuminfo = {"Unknown", "Unknown", "Unknown"};
-	int infoLineCount = 0;
-	ifstream f(path+"metadata.txt");
-	string l;
-	while(getline(f, l)){
-	    albuminfo[infoLineCount]=l;
-	    infoLineCount++;
-	}
-
-	/* 3. Add new album instance */
-	albums.push_back(
-	    Album(path, albuminfo[0], albuminfo[1], albuminfo[2], result)
-	);
-    }
-}
-
-void loadSongs(vector<Song> &songs, string album_path){
-    songs = {}; 
-
-    for (auto &file : filesystem::directory_iterator(album_path)){
-	string fname = file.path().filename().string();
-	if (fname.substr(fname.length()-4, 4)!=".mp3") continue;
-	
-	fname = fname.substr(0, fname.length()-4); // rm extension
-	if (fname.length() > 45) { // abbreviate if name too long
-	    fname = fname.substr(0, 44) + "...";
-	}
-
-	songs.push_back(Song(file.path(), fname));
-    }
-}
 
 void mainLoop(){
     while(!finished){
 	engine.clearScreen();
 	engine.drawHorizontalSmoothLine(3, SCREEN_COLS, 5);
 	engine.drawVerticalSmoothLine(6, SCREEN_ROWS, SCREEN_COLS-37);
-	drawCurrentSong("[SONG]", "[ALBUM]", "[YEAR]", "[ARTIST]");
+	drawCurrentSong(controller);
 	drawAlbums(albums, controller, currMode);
 	drawSongsOfAlbum(controller.currAlbum.path, songs, controller, currMode);
 
@@ -103,6 +64,7 @@ int main(){
     engine.setCanonicalAndCursor(0);
     engine.clearScreen();
     if (!checkScreenSize()) return 0;
+    ma_engine_init(NULL, &miniaudio);
 
     /* load albums and songs */
     loadAlbums(albums, album_paths);
@@ -114,9 +76,13 @@ int main(){
     while(!finished){
 	char ch = getchar();
 	switch (ch){
+
+	    /* quit the program */
 	    case 'q':
 		finished = true;
 		break;
+
+	    /* VM: move down */
 	    case 'j':
 		if (currMode==1){
 		    controller.currAlbumIndex=(controller.currAlbumIndex+1)%albums.size();
@@ -124,8 +90,11 @@ int main(){
 		    loadSongs(songs, controller.currAlbum.path);
 		} else if (currMode==2){
 		    controller.currSongIndex=(controller.currSongIndex+1)%songs.size();
+		    controller.currSong = songs[controller.currSongIndex];
 		}
 		break;
+
+	    /* VM: move up */
 	    case 'k':
 		if (currMode==1){
 		    controller.currAlbumIndex=
@@ -137,11 +106,35 @@ int main(){
 		    controller.currSongIndex=
 			controller.currSongIndex==0?
 			    songs.size()-1: controller.currSongIndex-1;
+		    controller.currSong = songs[controller.currSongIndex];
 		} 
 		break;
 
+	    /* change mode */
 	    case '\t':
 		currMode = (currMode+1)%3;
+		if (currMode == 2){
+		    controller.currSongIndex = 0; // reset to the first song
+		}
+		break;
+
+	    /* action on currently selected */
+	    case '\n':
+		if (currMode == 2){
+		   controller.currPlayingAlbum = controller.currAlbum;
+		   controller.currPlayingSong = controller.currSong;
+
+		   if (controller.isPlaying){
+		       /* if something's playing, remove it */
+		       ma_sound_uninit(&currentSound); 
+		       controller.isPlaying = false;
+		   }
+
+		   if (ma_sound_init_from_file(&miniaudio, (controller.currPlayingSong->path).c_str(), MA_SOUND_FLAG_STREAM, NULL, NULL, &currentSound)==MA_SUCCESS){
+		       ma_sound_start(&currentSound);
+		       controller.isPlaying = true;
+		   }
+		}
 		break;
 		
 	}
