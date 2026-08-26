@@ -27,7 +27,6 @@ struct Controller {
 
     optional<Album> currPlayingAlbum;
     optional<Song> currPlayingSong;
-    bool isPlaying = false;
     int currAlbumIndex = 0;
     int currSongIndex = 0;
     Controller() {}

@@ -152,7 +152,7 @@ void loadSongs(vector<Song> &songs, string album_path){
 
     for (auto &file : filesystem::directory_iterator(album_path)){
 	string fname = file.path().filename().string();
-	if (fname.substr(fname.length()-4, 4)!=".mp3") continue;
+	if (fname.substr(fname.length()-4, 4)!=".wav") continue;
 	
 	fname = fname.substr(0, fname.length()-4); // rm extension
 	if (fname.length() > 45) { // abbreviate if name too long

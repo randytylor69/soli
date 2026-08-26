@@ -1,7 +1,5 @@
-#define MINIAUDIO_IMPLEMENTATION
 #include "termigine.h"
 #include "soli.h"
-#include "miniaudio.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,9 +14,6 @@
 
 using namespace std;
 
-ma_engine miniaudio;
-ma_sound currentSound;
-
 Engine engine;
 Controller controller;
 
@@ -28,7 +23,7 @@ static const int SCREEN_COLS = engine.getTerminalWidth();
 static const int SCREEN_ROWS = engine.getTerminalHeight();
 
 vector<string> album_paths{
-    HOME + "/Music/Amore_1982/",
+    HOME + "/Music/The_Strangers_1979/",
     HOME + "/Music/Les_Failles_2019/",
     HOME + "/Music/Suite_bergamasque_1905/",
 };
@@ -64,7 +59,6 @@ int main(){
     engine.setCanonicalAndCursor(0);
     engine.clearScreen();
     if (!checkScreenSize()) return 0;
-    ma_engine_init(NULL, &miniaudio);
 
     /* load albums and songs */
     loadAlbums(albums, album_paths);
@@ -122,19 +116,7 @@ int main(){
 	    case '\n':
 		if (currMode == 2){
 		   controller.currPlayingAlbum = controller.currAlbum;
-		   controller.currPlayingSong = controller.currSong;
-
-		   if (controller.isPlaying){
-		       /* if something's playing, remove it */
-		       ma_sound_uninit(&currentSound); 
-		       controller.isPlaying = false;
-		   }
-
-		   if (ma_sound_init_from_file(&miniaudio, (controller.currPlayingSong->path).c_str(), MA_SOUND_FLAG_STREAM, NULL, NULL, &currentSound)==MA_SUCCESS){
-		       ma_sound_start(&currentSound);
-		       controller.isPlaying = true;
-		   }
-		}
+		   controller.currPlayingSong = controller.currSong;}
 		break;
 		
 	}
