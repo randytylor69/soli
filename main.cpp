@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <cmath>
 #include <filesystem>
+#include <SDL2/SDL.h>
 
 using namespace std;
 
@@ -19,6 +20,8 @@ Controller controller;
 
 const string HOME = getenv("HOME");
 static bool finished = false;
+static bool hasErrorToPrint = false;
+static string errMsg = "";
 static const int SCREEN_COLS = engine.getTerminalWidth();
 static const int SCREEN_ROWS = engine.getTerminalHeight();
 
@@ -50,6 +53,10 @@ void mainLoop(){
 	drawAlbums(albums, controller, currMode);
 	drawSongsOfAlbum(controller.currAlbum.path, songs, controller, currMode);
 
+	/* errors */
+	if (hasErrorToPrint) {
+	    engine.print(errMsg, 1, 1);
+	}
 	usleep(10000);
     }
 }
@@ -64,6 +71,12 @@ int main(){
     loadAlbums(albums, album_paths);
     controller.currAlbum = albums[0];
     loadSongs(songs, controller.currAlbum.path);
+
+    /* SDL */
+    SDL_InitSubSystem(SDL_INIT_AUDIO);
+    SDL_AudioSpec spec;
+    Uint8 * audio_buf;
+    Uint32  audio_len;
 
     /* multithreading */
     thread worker(mainLoop);
@@ -115,8 +128,31 @@ int main(){
 	    /* action on currently selected */
 	    case '\n':
 		if (currMode == 2){
+		    /* push current selected to playing */
 		   controller.currPlayingAlbum = controller.currAlbum;
-		   controller.currPlayingSong = controller.currSong;}
+		   controller.currPlayingSong = controller.currSong;
+		
+		    /* load .wav */    
+		    SDL_AudioSpec *returnSpec = SDL_LoadWAV(
+			controller.currSong.path.c_str(), 
+			&spec, &audio_buf, &audio_len
+		    );
+		    if (returnSpec==NULL){
+			hasErrorToPrint=true;
+			errMsg = "error opening wav file";
+		    }
+
+		    /* opening .wav */
+		    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(
+			    NULL,0,returnSpec,NULL,0);
+		    
+		    /* queueing .wav */
+		    int queueAudioResult = SDL_QueueAudio(dev, audio_buf, audio_len);
+		   SDL_PauseAudioDevice(dev, 0);
+		   // SDL_Delay(10000);
+		   // SDL_CloseAudioDevice(dev);
+		   // SDL_FreeWAV(audio_buf);
+		}
 		break;
 		
 	}
