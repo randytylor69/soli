@@ -23,4 +23,4 @@ Not only is it a great learning opportunity about the file system / file operati
 - [x] Vim motion as controls
 - [ ] Adding local directories as albums
 - [ ] Searching YouTube results locally and download directly from the TUI
-- [ ]Responsive layout
+- [ ] Responsive layout
