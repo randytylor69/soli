@@ -38,6 +38,21 @@ void drawSongsOfAlbum(string album_path, vector<Song> songs, Controller controll
     }
 }
 
+string getFormattedTime(int lenTotal){
+    // lenTotal is in seconds.
+    string formatted_result = "";
+    int seconds = lenTotal % 60;
+    int minutes = (lenTotal - seconds) / 60;
+
+    formatted_result += to_string(minutes);
+    formatted_result += ":";
+    if (seconds < 10) formatted_result += "0";
+    formatted_result += to_string(seconds);
+    return formatted_result;
+
+
+}
+
 void drawCurrentSong(Controller controller){
     
     if (!controller.currPlayingSong.has_value()){
@@ -49,7 +64,15 @@ void drawCurrentSong(Controller controller){
 	    controller.currPlayingAlbum->name+" - "+
 	    controller.currPlayingAlbum->year,
 	    3, 2);
-	engine.print("|| 0:00 / 0:00\033[0m\n", 3, 3);
+	/* print song duration + progress */
+	print("\033[{};{}H{} ", 3, 3, controller.isPaused? "[ || ]" : "[ >> ]");
+	fflush(stdout);
+	string formatted_currSongProgress = "";
+	string formatted_currSongLength = "";
+	
+	print("{} / {}\033[0m\n", getFormattedTime(controller.currSongProgress), getFormattedTime(controller.currSongLength));
+
+	/* Print artist */
 	engine.print("by "+
 	    controller.currPlayingAlbum->artist, 
 	    SCREEN_COLS-controller.currPlayingAlbum->artist.length()-3, 2);
@@ -163,6 +186,7 @@ void loadSongs(vector<Song> &songs, string album_path){
     }
 }
 
+
 /* --------------- VIM MOTION METHOD ----------------------- */
 
 
@@ -212,6 +236,7 @@ void playSelectedSong(Controller &controller, int currMode, SDL_AudioSpec spec, 
 	    SDL_ClearQueuedAudio(controller.currAudioDevice);
 	    SDL_CloseAudioDevice(controller.currAudioDevice);
 	    controller.currAudioDevice = 0;
+	    controller.currSongProgress = 0;
 	}
 	/* push current selected to playing */
 	controller.currPlayingAlbum = controller.currAlbum;
@@ -223,6 +248,14 @@ void playSelectedSong(Controller &controller, int currMode, SDL_AudioSpec spec, 
 		controller.currSong.path.c_str(), 
 		&spec, &audio_buf, &audio_len
 	);
+	/* get song duration */
+	int sampleSize = SDL_AUDIO_BITSIZE(spec.format) / 8;
+	int sampleCount = audio_len / sampleSize;
+	int sampleLength = 0;
+	if (spec.channels){
+	    sampleLength = sampleCount / spec.channels;
+	} else sampleLength = sampleCount;
+	controller.currSongLength = (double)sampleLength / (double)spec.freq;
 	/* opening .wav */
 	controller.currAudioDevice = SDL_OpenAudioDevice(
 		NULL,0,returnSpec,NULL,0);
@@ -240,3 +273,5 @@ void pauseSelectedSong(Controller &controller, int currMode){
 	SDL_PauseAudioDevice(controller.currAudioDevice, controller.isPaused);
     }
 }
+
+

@@ -28,11 +28,15 @@ struct Controller {
     
     optional<Album> currPlayingAlbum;
     optional<Song> currPlayingSong;
-
-    SDL_AudioDeviceID currAudioDevice;
-    int isPaused = 1; // is current playing device paused, non-zero to pause, 0 to unpause
     int currAlbumIndex = 0;
     int currSongIndex = 0;
+
+    /* SDL + song properties */
+    SDL_AudioDeviceID currAudioDevice;
+    int isPaused = 1; // is current playing device paused? non-zero to pause, 0 to unpause
+    int currSongLength = 0; // seconds
+    int currSongProgress = 0; // seconds
+
     Controller() {}
 };
 void drawSongsOfAlbum(string album_path, vector<Song> songs, Controller controller, int currMode);

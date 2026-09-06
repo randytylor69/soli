@@ -50,7 +50,19 @@ void mainLoop(){ while(!finished){
 	drawAlbums(albums, controller, currMode);
 	drawSongsOfAlbum(controller.currAlbum.path, songs, controller, currMode);
 
-	usleep(10000);
+	usleep(100000);
+    }
+}
+
+void addSongProgress(Controller &controller){
+    while (!finished){
+	if (!controller.isPaused) {
+	    controller.currSongProgress++;
+	    usleep(1000000);
+	} else {
+	    usleep(50000);
+	}
+
     }
 }
 
@@ -60,7 +72,7 @@ int main(){
     engine.clearScreen();
     if (!checkScreenSize()) return 0;
 
-    /* load albums and songs */
+   /* load albums and songs */
     loadAlbums(albums, album_paths);
     controller.currAlbum = albums[0];
     loadSongs(songs, controller.currAlbum.path);
@@ -73,6 +85,7 @@ int main(){
 
     /* multithreading */
     thread worker(mainLoop);
+    thread progressWorker(addSongProgress, std::ref(controller));
     while(!finished){
 	char ch = getchar();
 	switch (ch){
@@ -99,9 +112,11 @@ int main(){
 	    case ' ': /* pause currently playing song */
 		pauseSelectedSong(controller, currMode);
 		break;
+	    
 	}
     }
     worker.join();
+    progressWorker.join();
     printf("\n\n\n\n\n\n\n\n\n");
     engine.setCanonicalAndCursor(1);
     return 0;

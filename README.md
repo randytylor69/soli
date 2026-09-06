@@ -12,8 +12,13 @@ Hybrid music player TUI written from scratch. Not only is it a great learning op
 
 ## Planned Features
 
-- Listening to local `.wav` audio files
-- Vim motion as controls
-- Adding local directories as albums
-- Searching YouTube results locally and download directly from the TUI
-- Responsive layout
+- [x] Play local `.wav` audio files
+- [x] Pause & resume current playing song
+- [x] Display current song length + progress
+- [x] Display albums & cover art
+- [x] Display all songs in an album
+- [x] Highlighting selected elements (i.e. album / song)
+- [x] Vim motion as controls
+- [ ] Adding local directories as albums
+- [ ] Searching YouTube results locally and download directly from the TUI
+- [ ]Responsive layout
