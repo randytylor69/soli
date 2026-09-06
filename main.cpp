@@ -18,10 +18,8 @@ using namespace std;
 Engine engine;
 Controller controller;
 
-const string HOME = getenv("HOME");
+const string HOME = getenv("HOME"); // user home directory
 static bool finished = false;
-static bool hasErrorToPrint = false;
-static string errMsg = "";
 static const int SCREEN_COLS = engine.getTerminalWidth();
 static const int SCREEN_ROWS = engine.getTerminalHeight();
 
@@ -44,8 +42,7 @@ char currMode = 1; // INDEX of the above string
  */
 
 
-void mainLoop(){
-    while(!finished){
+void mainLoop(){ while(!finished){
 	engine.clearScreen();
 	engine.drawHorizontalSmoothLine(3, SCREEN_COLS, 5);
 	engine.drawVerticalSmoothLine(6, SCREEN_ROWS, SCREEN_COLS-37);
@@ -53,10 +50,6 @@ void mainLoop(){
 	drawAlbums(albums, controller, currMode);
 	drawSongsOfAlbum(controller.currAlbum.path, songs, controller, currMode);
 
-	/* errors */
-	if (hasErrorToPrint) {
-	    engine.print(errMsg, 1, 1);
-	}
 	usleep(10000);
     }
 }
@@ -84,45 +77,20 @@ int main(){
 	char ch = getchar();
 	switch (ch){
 
-	    /* quit the program */
-	    case 'q':
+	    case 'q': /* quit program */
 		finished = true;
 		break;
 
-	    /* VM: move down */
-	    case 'j':
-		if (currMode==1){
-		    controller.currAlbumIndex=(controller.currAlbumIndex+1)%albums.size();
-		    controller.currAlbum = albums[controller.currAlbumIndex];
-		    loadSongs(songs, controller.currAlbum.path);
-		} else if (currMode==2){
-		    controller.currSongIndex=(controller.currSongIndex+1)%songs.size();
-		    controller.currSong = songs[controller.currSongIndex];
-		}
+	    case 'j': /* VM: move down */
+		toggleMoveDown(controller, currMode, songs, albums);
 		break;
 
-	    /* VM: move up */
-	    case 'k':
-		if (currMode==1){
-		    controller.currAlbumIndex=
-			controller.currAlbumIndex==0?
-			    albums.size()-1 : controller.currAlbumIndex-1;
-		    controller.currAlbum = albums[controller.currAlbumIndex];
-		    loadSongs(songs, controller.currAlbum.path);
-		} else if (currMode==2){
-		    controller.currSongIndex=
-			controller.currSongIndex==0?
-			    songs.size()-1: controller.currSongIndex-1;
-		    controller.currSong = songs[controller.currSongIndex];
-		} 
+	    case 'k': /* VM: move up */
+		toggleMoveUp(controller, currMode, songs, albums);
 		break;
 
-	    /* change mode */
-	    case '\t':
-		currMode = (currMode+1)%3;
-		if (currMode == 2){
-		    controller.currSongIndex = 0; // reset to the first song
-		}
+	    case '\t': /* toggle mode change */
+		toggleModeChange(controller, currMode);
 		break;
 
 	    /* action on currently selected */
@@ -137,11 +105,6 @@ int main(){
 			controller.currSong.path.c_str(), 
 			&spec, &audio_buf, &audio_len
 		    );
-		    if (returnSpec==NULL){
-			hasErrorToPrint=true;
-			errMsg = "error opening wav file";
-		    }
-
 		    /* opening .wav */
 		    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(
 			    NULL,0,returnSpec,NULL,0);

@@ -162,3 +162,42 @@ void loadSongs(vector<Song> &songs, string album_path){
 	songs.push_back(Song(file.path(), fname));
     }
 }
+
+/* --------------- VIM MOTION METHOD ----------------------- */
+
+
+void toggleMoveDown(Controller &controller, char currMode, vector<Song> &songs, vector<Album> &albums){
+
+    if (currMode==1){
+	controller.currAlbumIndex=(controller.currAlbumIndex+1)%albums.size();
+	controller.currAlbum = albums[controller.currAlbumIndex];
+	loadSongs(songs, controller.currAlbum.path);
+    } else if (currMode==2){
+	controller.currSongIndex=(controller.currSongIndex+1)%songs.size();
+	controller.currSong = songs[controller.currSongIndex];
+    }
+}
+
+void toggleMoveUp(Controller &controller, char currMode, vector<Song> &songs, vector<Album>&albums){
+
+    if (currMode==1){
+	controller.currAlbumIndex=
+	    controller.currAlbumIndex==0?
+	    albums.size()-1 : controller.currAlbumIndex-1;
+	controller.currAlbum = albums[controller.currAlbumIndex];
+	loadSongs(songs, controller.currAlbum.path);
+    } else if (currMode==2){
+	controller.currSongIndex=
+	    controller.currSongIndex==0?
+	    songs.size()-1: controller.currSongIndex-1;
+	controller.currSong = songs[controller.currSongIndex];
+    } 
+}
+
+void toggleModeChange(Controller &controller, char &currMode){
+
+    currMode = (currMode+1)%3;
+    if (currMode == 2){
+	controller.currSongIndex = 0; // reset to the first song
+    }
+}

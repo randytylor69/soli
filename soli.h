@@ -37,5 +37,9 @@ void drawAlbums(vector<Album> &albums, Controller controller, int currMode);
 bool checkScreenSize();
 void loadAlbums(vector<Album> &albums, vector<string> album_paths);
 void loadSongs(vector<Song> &songs, string album_path);
+/* VIM MOTION METHODS */
+void toggleMoveDown(Controller &controller, char currMode, vector<Song> &songs, vector<Album> &albums);
+void toggleMoveUp(Controller &controller, char currMode, vector<Song> &songs, vector<Album> &albums);
+void toggleModeChange(Controller &controller, char &currMode);
 
 #endif
