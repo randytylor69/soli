@@ -2,9 +2,7 @@
 
 Hybrid music player TUI written from scratch. Not only is it a great learning opportunity about the file system / file operations / terminal IO / OOP, it also serves as a showcase for my custom terminal graphics engine [termigine](https://github.com/randytylor69/terminal-graphics-engine).
 
-| ![Screenshot](./newscreenshot_056.jpg)|
-| --- |
-| Directly `.wav` playback inside the terminal |
+<img height="400" src="./newscreenshot_056.jpg" />
 
 &nbsp;
 
