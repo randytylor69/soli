@@ -12,7 +12,7 @@
 #include <cmath>
 #include <filesystem>
 #include <SDL2/SDL.h>
-
+/* clear && make && ./main.out */
 using namespace std;
 
 Engine engine;
@@ -90,34 +90,15 @@ int main(){
 		break;
 
 	    case '\t': /* toggle mode change */
-		toggleModeChange(controller, currMode);
+		toggleModeChange(controller, currMode, songs);
 		break;
 
-	    /* action on currently selected */
-	    case '\n':
-		if (currMode == 2){
-		    /* push current selected to playing */
-		   controller.currPlayingAlbum = controller.currAlbum;
-		   controller.currPlayingSong = controller.currSong;
-		
-		    /* load .wav */    
-		    SDL_AudioSpec *returnSpec = SDL_LoadWAV(
-			controller.currSong.path.c_str(), 
-			&spec, &audio_buf, &audio_len
-		    );
-		    /* opening .wav */
-		    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(
-			    NULL,0,returnSpec,NULL,0);
-		    
-		    /* queueing .wav */
-		    int queueAudioResult = SDL_QueueAudio(dev, audio_buf, audio_len);
-		   SDL_PauseAudioDevice(dev, 0);
-		   // SDL_Delay(10000);
-		   // SDL_CloseAudioDevice(dev);
-		   // SDL_FreeWAV(audio_buf);
-		}
+	    case '\n': /* action on currently selected */
+		playSelectedSong(controller, currMode, spec, audio_buf, audio_len);
 		break;
-		
+	    case ' ': /* pause currently playing song */
+		pauseSelectedSong(controller, currMode);
+		break;
 	}
     }
     worker.join();

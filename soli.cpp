@@ -194,10 +194,49 @@ void toggleMoveUp(Controller &controller, char currMode, vector<Song> &songs, ve
     } 
 }
 
-void toggleModeChange(Controller &controller, char &currMode){
+void toggleModeChange(Controller &controller, char &currMode, const vector<Song> &songs){
 
     currMode = (currMode+1)%3;
     if (currMode == 2){
+	controller.currSong = songs[0];
 	controller.currSongIndex = 0; // reset to the first song
+    }
+}
+
+void playSelectedSong(Controller &controller, int currMode, SDL_AudioSpec spec, Uint8 * audio_buf, Uint32 audio_len){
+
+    if (currMode == 2){
+	/* if a song is already playing, remove it */
+	if (controller.currAudioDevice > 0){
+	    SDL_PauseAudioDevice(controller.currAudioDevice, 1);
+	    SDL_ClearQueuedAudio(controller.currAudioDevice);
+	    SDL_CloseAudioDevice(controller.currAudioDevice);
+	    controller.currAudioDevice = 0;
+	}
+	/* push current selected to playing */
+	controller.currPlayingAlbum = controller.currAlbum;
+	controller.currPlayingSong = controller.currSong;
+	/* remove the current playing song */
+
+	/* load .wav */    
+	SDL_AudioSpec *returnSpec = SDL_LoadWAV(
+		controller.currSong.path.c_str(), 
+		&spec, &audio_buf, &audio_len
+	);
+	/* opening .wav */
+	controller.currAudioDevice = SDL_OpenAudioDevice(
+		NULL,0,returnSpec,NULL,0);
+
+	/* queueing .wav */
+	SDL_QueueAudio(controller.currAudioDevice, audio_buf, audio_len);
+	controller.isPaused = 0;
+	SDL_PauseAudioDevice(controller.currAudioDevice, controller.isPaused); // unpause
+    }
+}
+
+void pauseSelectedSong(Controller &controller, int currMode){
+    if (currMode==2){
+	controller.isPaused = !controller.isPaused;
+	SDL_PauseAudioDevice(controller.currAudioDevice, controller.isPaused);
     }
 }

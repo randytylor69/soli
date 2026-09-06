@@ -4,6 +4,7 @@
 #include "termigine.h"
 #include <vector>
 #include <optional>
+#include <SDL2/SDL.h>
 using namespace std;
 
 struct Album {
@@ -24,9 +25,12 @@ struct Controller {
     /* manages the global states: current album / song / etc. */
     Album currAlbum; 
     Song currSong;   
-
+    
     optional<Album> currPlayingAlbum;
     optional<Song> currPlayingSong;
+
+    SDL_AudioDeviceID currAudioDevice;
+    int isPaused = 1; // is current playing device paused, non-zero to pause, 0 to unpause
     int currAlbumIndex = 0;
     int currSongIndex = 0;
     Controller() {}
@@ -40,6 +44,7 @@ void loadSongs(vector<Song> &songs, string album_path);
 /* VIM MOTION METHODS */
 void toggleMoveDown(Controller &controller, char currMode, vector<Song> &songs, vector<Album> &albums);
 void toggleMoveUp(Controller &controller, char currMode, vector<Song> &songs, vector<Album> &albums);
-void toggleModeChange(Controller &controller, char &currMode);
-
+void toggleModeChange(Controller &controller, char &currMode, const vector<Song> &songs);
+void playSelectedSong(Controller &controller, int currMode, SDL_AudioSpec spec, Uint8 * audio_buf, Uint32 audio_len);
+void pauseSelectedSong(Controller &controller, int currMode);
 #endif
