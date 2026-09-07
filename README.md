@@ -25,19 +25,38 @@ Not only is it a great learning opportunity about the file system / file operati
 - [ ] Searching YouTube results locally and download directly from the TUI
 - [ ] Responsive layout
 
+&nbsp;
+
+## Controls
+
+Soli uses [Vim Motions](https://vimdoc.sourceforge.net/htmldoc/motion.html) to navigate:
+
+| Key | Description |
+| --- | --- |
+| `j` / `k` | Move up / down |
+| `[ENTER]` | Play currently selected song |
+| `[SPACE]` | Pause / Resume currently selected song |
+| `q` | Quit program | 
+
+&nbsp;
+
 ## Build
 
-1. Soli uses SDL2 to play audio, [ensure it's intalled on your system](https://wiki.libsdl.org/SDL2/Installation).
+1. Soli uses SDL2 to play audio, [ensure it's intalled on your system](https://wiki.libsdl.org/SDL2/Installation). It also uses SQLite to store shadow copies of albums, [ensure it's installed too](https://www.sqlite.org/download.html).
 
-2. Soli uses SQLite to store shadow copies of albums, [ensure it's installed too](https://www.sqlite.org/download.html).
+2. Initially, Soli does not store any albums, they have to be manually appened to a database named `db.sqlite3`, which needs to be created first:
 
-3. Initially, Soli does not store any albums. To add an album to the SQLite database, first make sure the album directory is correctly configured, meaning it must have:
+```shell
+touch db.sqlite3
+```
+
+Then, make sure the album directory you wish to add to Soli is correctly configured, meaning it must have:
 
 - A cover image named `cover.jpg`
 - A `metadata.txt`
 - Audio files ending in `.wav`
 
-The `metadata.txt` file should include relevant information regarding the album: the album name, the artist name, and the year. For example:
+The `metadata.txt` file should include relevant information regarding the album: the album name, the artist name, and the year (in this exact order). For example:
 
 ```txt
 Rubber Soul
@@ -48,10 +67,24 @@ The Beatles
 Then you can add the album to the database:
 
 ```shell
-make && ./main.out <ABSOLUTE_PATH_TO_ALBUM_DIRECTORY>
+make 
+./main.out --add <ABSOLUTE_PATH_TO_ALBUM_DIRECTORY>
 ```
 
-4. Run the program:
+Or delete an album from the database:
+
+```shell
+./main.out --delete <ABSOLUTE_PATH_TO_ALBUM_DIRECTORY>
+```
+
+Or display all albums you currently have:
+
+```shell
+./main.out --show
+```
+
+To run the program, simply call the executable:
+
 ```shell
 make && ./main.out
 ```
