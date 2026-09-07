@@ -144,7 +144,7 @@ void loadAlbums(vector<Album> &albums, vector<string> album_paths){
     for (const string &path : album_paths){
 
 	/* 1. Get album art escape sequence to cache */
-	string cmd ="chafa --format=kitty -s 7x7 "+path+"cover.jpg"; 
+	string cmd ="chafa --format=kitty -s 7x7 "+path+"/cover.jpg"; 
 	array<char, 128> buffer;
 	string result;
 	auto pipeCloser = [](FILE* fp) { (void)pclose(fp); };
@@ -156,7 +156,7 @@ void loadAlbums(vector<Album> &albums, vector<string> album_paths){
 	/* 2. Get album name + artist + year */
 	vector<string> albuminfo = {"Unknown", "Unknown", "Unknown"};
 	int infoLineCount = 0;
-	ifstream f(path+"metadata.txt");
+	ifstream f(path+"/metadata.txt");
 	string l;
 	while(getline(f, l)){
 	    albuminfo[infoLineCount]=l;
@@ -296,4 +296,99 @@ void checkSongProgress(Controller &controller, char currMode, vector<Song> &song
 	   }
 	}
     }
+}
+
+/* ------------ READING FROM CMD  (DB methods )------------- */
+
+void openDB(const char* filename, sqlite3*& db){
+    sqlite3_open(filename, &db);
+}
+
+void createTable(sqlite3* database){
+    char* err; // err message
+    const char* sql = "CREATE TABLE IF NOT EXISTS ALBUM_PATHS("
+		      "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+		      "PATH TEXT NOT NULL UNIQUE);";
+    int rc = sqlite3_exec(database, sql, NULL, 0, &err);
+    if (rc != SQLITE_OK) printf("%s\n", err);
+}
+
+void insertData(sqlite3 *db, string path){
+    char *err;
+    const char* sql = sqlite3_mprintf(
+	    "INSERT INTO ALBUM_PATHS (PATH) VALUES (%Q);", 
+	    path.c_str()
+    );
+    int rc = sqlite3_exec(db, sql, NULL, 0, &err);
+    if (rc != SQLITE_OK) printf("%s\n", err);
+}
+
+void deleteData(sqlite3 *db, string path){
+    char *err;
+    const char* sql = sqlite3_mprintf(
+	    "DELETE FROM ALBUM_PATHS WHERE PATH=%Q;",
+	    path.c_str()
+    );
+    int rc = sqlite3_exec(db, sql, NULL, 0, &err);
+    if (rc != SQLITE_OK) printf("%s\n", err);
+}
+
+void readTable(sqlite3 *db, vector<string> &album_paths){
+    album_paths.clear();
+    const char* sql = "SELECT PATH FROM ALBUM_PATHS;";
+    sqlite3_stmt *stmt = nullptr;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Read error: %s\n", sqlite3_errmsg(db));
+        return;
+    }
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const unsigned char* text = sqlite3_column_text(stmt, 0);
+        if (text) {
+            album_paths.push_back(reinterpret_cast<const char*>(text));
+        }
+    }
+
+    sqlite3_finalize(stmt);
+}
+
+void readCMD(int argc, char *argv[], Engine engine, sqlite3 *db, vector<string> &album_paths){
+    
+    if (argc == 3){
+
+        string flag = argv[1];
+
+	if (flag=="--add"){ /* add path to db */
+	    string album_path = argv[2];
+	    insertData(db, album_path);
+	    readTable(db, album_paths);
+	    printf("\nSoli: new album added to the database  •ᴗ•\n");
+
+	} else if (flag=="--delete"){ /* delete path from db */
+	    string album_path = argv[2];
+	    deleteData(db, album_path);
+	    readTable(db, album_paths);
+	    printf("\nSoli: album deleted from database  •ᴗ•\n");		} 
+	printf("\nCurrent album paths:\n\n");
+	for (int i = 0; i < album_paths.size(); i++){
+	    printf("%s\n", album_paths[i].c_str());
+	} printf("\n");
+	engine.setCanonicalAndCursor(1);
+
+    } else if (argc == 2){
+	char* flag = argv[1];
+	if (flag=="--show"){
+	    readTable(db, album_paths);
+	}
+	printf("\nSoli: reading all albums •ᴗ•\n");
+	printf("\nCurrent album paths:\n\n");
+	for (int i = 0; i < album_paths.size(); i++){
+	    printf("%s\n", album_paths[i].c_str());
+	} printf("\n");
+	engine.setCanonicalAndCursor(1);
+    }
+
+
 }

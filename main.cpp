@@ -17,31 +17,20 @@ using namespace std;
 
 Engine engine;
 Controller controller;
+sqlite3 *db;
 
-const string HOME = getenv("HOME"); // user home directory
 static bool finished = false;
 static const int SCREEN_COLS = engine.getTerminalWidth();
 static const int SCREEN_ROWS = engine.getTerminalHeight();
 
-vector<string> album_paths{
-    HOME + "/Music/The_Strangers_1979/",
-    HOME + "/Music/Les_Failles_2019/",
-    HOME + "/Music/Suite_bergamasque_1905/",
-};
-
+// vector<string> album_paths{
+//     "/home/ziyin/Music/The_Strangers_1979/",
+//     "/home/ziyin/Music/Les_Failles_2019/",
+// };
+vector<string> album_paths = {};
 vector<Album> albums ={};
 vector<Song> songs ={}; // songs of current album
-
-
-string modes = "012";
-char currMode = 1; // INDEX of the above string
-/*
- *  0 = current song mode (pause / resume / jump)
- *  1 = albums mode (toggle select albums)
- *  2 = songs mode  (toggle select songs within an album)
- *
- */
-
+char currMode = 1; // 1: album. 2: song. 3: curr song (not used for now)
 
 void mainLoop(){ 
     while(!finished){
@@ -71,13 +60,29 @@ void addSongProgress(Controller &controller){
     }
 }
 
-int main(){
+int main(int argc, char* argv[]){
+
     /* change terminal behaviour */
     engine.setCanonicalAndCursor(0);
     engine.clearScreen();
-    if (!checkScreenSize()) return 0;
+    if (!checkScreenSize()) {
+	engine.setCanonicalAndCursor(1);
+	return 0;
+    };
 
-   /* load albums and songs */
+    
+    /* DB operations */
+    const char *db_name = "db.sqlite3";
+    openDB(db_name, db);
+    createTable(db);
+    readTable(db, album_paths);
+    
+    /* TAKING CMD ARGS */
+    if (argc > 1) {
+	readCMD(argc, argv, engine, db, album_paths);
+	return 0;
+    };
+    /* load albums and songs */
     loadAlbums(albums, album_paths);
     controller.currAlbum = albums[0];
     loadSongs(songs, controller);
@@ -103,20 +108,20 @@ int main(){
 	    case 'k': /* VM: move up */
 		toggleMoveUp(controller, currMode, songs, albums);
 		break;
-	    
+
 	    case '\t': /* toggle mode change */
 		toggleModeChange(controller, currMode, songs);
 		break;
 
 	    case '\n': /* action on currently selected */
-		
-		    playSelectedSong(controller, currMode);
+
+		playSelectedSong(controller, currMode);
 		break;
-		
+
 	    case ' ': /* pause currently playing song */
 		pauseSelectedSong(controller, currMode);
 		break;
-	    
+
 	}
     }
     worker.join();
