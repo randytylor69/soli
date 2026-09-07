@@ -27,7 +27,7 @@ void drawSongsOfAlbum(string album_path, vector<Song> songs, Controller controll
 	/* currently selected song is bold + italic + colored */
 	engine.print(
 	    controller.currSongIndex == songCount - 1 && currMode==2 ?
-	    songOrder+"\033[38;5;209m\033[1m\033[3m"+song.name+"\033[0m":
+	   songOrder+"\033[38;5;209m\033[1m\033[3m"+song.name+"\033[0m":
 	    songOrder+"\033[97m"+song.name+"\033[0m",
 	    3, rowCount);
 	rowCount++;
@@ -170,8 +170,9 @@ void loadAlbums(vector<Album> &albums, vector<string> album_paths){
     }
 }
 
-void loadSongs(vector<Song> &songs, string album_path){
+void loadSongs(vector<Song> &songs, Controller &controller){
     songs = {}; 
+    string album_path = controller.currAlbum.path;
 
     for (auto &file : filesystem::directory_iterator(album_path)){
 	string fname = file.path().filename().string();
@@ -183,6 +184,7 @@ void loadSongs(vector<Song> &songs, string album_path){
 	}
 
 	songs.push_back(Song(file.path(), fname));
+	controller.currAlbum.size++;
     }
 }
 
@@ -195,7 +197,7 @@ void toggleMoveDown(Controller &controller, char currMode, vector<Song> &songs, 
     if (currMode==1){
 	controller.currAlbumIndex=(controller.currAlbumIndex+1)%albums.size();
 	controller.currAlbum = albums[controller.currAlbumIndex];
-	loadSongs(songs, controller.currAlbum.path);
+	loadSongs(songs, controller);
     } else if (currMode==2){
 	controller.currSongIndex=(controller.currSongIndex+1)%songs.size();
 	controller.currSong = songs[controller.currSongIndex];
@@ -209,7 +211,7 @@ void toggleMoveUp(Controller &controller, char currMode, vector<Song> &songs, ve
 	    controller.currAlbumIndex==0?
 	    albums.size()-1 : controller.currAlbumIndex-1;
 	controller.currAlbum = albums[controller.currAlbumIndex];
-	loadSongs(songs, controller.currAlbum.path);
+	loadSongs(songs, controller);
     } else if (currMode==2){
 	controller.currSongIndex=
 	    controller.currSongIndex==0?
@@ -227,7 +229,10 @@ void toggleModeChange(Controller &controller, char &currMode, const vector<Song>
     }
 }
 
-void playSelectedSong(Controller &controller, int currMode, SDL_AudioSpec spec, Uint8 * audio_buf, Uint32 audio_len){
+void playSelectedSong(Controller &controller, int currMode){
+    SDL_AudioSpec spec = controller.spec;
+    Uint8 * audio_buf = controller.audio_buf;
+    Uint32 audio_len = controller.audio_len;
 
     if (currMode == 2){
 	/* if a song is already playing, remove it */
@@ -241,7 +246,6 @@ void playSelectedSong(Controller &controller, int currMode, SDL_AudioSpec spec, 
 	/* push current selected to playing */
 	controller.currPlayingAlbum = controller.currAlbum;
 	controller.currPlayingSong = controller.currSong;
-	/* remove the current playing song */
 
 	/* load .wav */    
 	SDL_AudioSpec *returnSpec = SDL_LoadWAV(
@@ -256,6 +260,7 @@ void playSelectedSong(Controller &controller, int currMode, SDL_AudioSpec spec, 
 	    sampleLength = sampleCount / spec.channels;
 	} else sampleLength = sampleCount;
 	controller.currSongLength = (double)sampleLength / (double)spec.freq;
+
 	/* opening .wav */
 	controller.currAudioDevice = SDL_OpenAudioDevice(
 		NULL,0,returnSpec,NULL,0);
@@ -275,3 +280,20 @@ void pauseSelectedSong(Controller &controller, int currMode){
 }
 
 
+void checkSongProgress(Controller &controller, char currMode, vector<Song> &songs, vector<Album> &albums){
+    if (controller.currAudioDevice > 0 && !controller.isPaused){
+	/* NOTE: isPaused returns FALSE if UNPAUSED */
+	Uint32 audioSize = SDL_GetQueuedAudioSize(controller.currAudioDevice);
+	if (audioSize == 0){
+	    /* song has finished */
+	   controller.currSongLength = 0; 
+	   controller.currSongProgress = 0; 
+	   controller.isPaused = 1; 
+	   /* play next song */
+	   if (controller.currSongIndex < controller.currAlbum.size){
+	       toggleMoveDown(controller, currMode, songs, albums);
+	       playSelectedSong(controller, currMode);
+	   }
+	}
+    }
+}

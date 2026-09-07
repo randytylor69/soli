@@ -32,6 +32,7 @@ vector<string> album_paths{
 vector<Album> albums ={};
 vector<Song> songs ={}; // songs of current album
 
+
 string modes = "012";
 char currMode = 1; // INDEX of the above string
 /*
@@ -42,23 +43,27 @@ char currMode = 1; // INDEX of the above string
  */
 
 
-void mainLoop(){ while(!finished){
+void mainLoop(){ 
+    while(!finished){
 	engine.clearScreen();
 	engine.drawHorizontalSmoothLine(3, SCREEN_COLS, 5);
 	engine.drawVerticalSmoothLine(6, SCREEN_ROWS, SCREEN_COLS-37);
 	drawCurrentSong(controller);
 	drawAlbums(albums, controller, currMode);
 	drawSongsOfAlbum(controller.currAlbum.path, songs, controller, currMode);
+	/* check for next song to play */
+	checkSongProgress(controller, currMode, songs, albums);
 
-	usleep(100000);
+	usleep(250000);
     }
 }
 
 void addSongProgress(Controller &controller){
+    /* since SDL can't interpret current song progress, like which second it's at, it will be manually calculated */
     while (!finished){
 	if (!controller.isPaused) {
 	    controller.currSongProgress++;
-	    usleep(1000000);
+	    usleep(1000000); // every 60 seconds in Africa, a minute passes
 	} else {
 	    usleep(50000);
 	}
@@ -75,13 +80,10 @@ int main(){
    /* load albums and songs */
     loadAlbums(albums, album_paths);
     controller.currAlbum = albums[0];
-    loadSongs(songs, controller.currAlbum.path);
+    loadSongs(songs, controller);
 
     /* SDL */
     SDL_InitSubSystem(SDL_INIT_AUDIO);
-    SDL_AudioSpec spec;
-    Uint8 * audio_buf;
-    Uint32  audio_len;
 
     /* multithreading */
     thread worker(mainLoop);
@@ -101,14 +103,16 @@ int main(){
 	    case 'k': /* VM: move up */
 		toggleMoveUp(controller, currMode, songs, albums);
 		break;
-
+	    
 	    case '\t': /* toggle mode change */
 		toggleModeChange(controller, currMode, songs);
 		break;
 
 	    case '\n': /* action on currently selected */
-		playSelectedSong(controller, currMode, spec, audio_buf, audio_len);
+		
+		    playSelectedSong(controller, currMode);
 		break;
+		
 	    case ' ': /* pause currently playing song */
 		pauseSelectedSong(controller, currMode);
 		break;
