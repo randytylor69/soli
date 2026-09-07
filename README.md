@@ -24,3 +24,34 @@ Not only is it a great learning opportunity about the file system / file operati
 - [ ] Adding local directories as albums
 - [ ] Searching YouTube results locally and download directly from the TUI
 - [ ] Responsive layout
+
+## Build
+
+1. Soli uses SDL2 to play audio, [ensure it's intalled on your system](https://wiki.libsdl.org/SDL2/Installation).
+
+2. Soli uses SQLite to store shadow copies of albums, [ensure it's installed too](https://www.sqlite.org/download.html).
+
+3. Initially, Soli does not store any albums. To add an album to the SQLite database, first make sure the album directory is correctly configured, meaning it must have:
+
+- A cover image named `cover.jpg`
+- A `metadata.txt`
+- Audio files ending in `.wav`
+
+The `metadata.txt` file should include relevant information regarding the album: the album name, the artist name, and the year. For example:
+
+```txt
+Rubber Soul
+The Beatles
+1965
+```
+
+Then you can add the album to the database:
+
+```shell
+make && ./main.out <ABSOLUTE_PATH_TO_ALBUM_DIRECTORY>
+```
+
+4. Run the program:
+```shell
+make && ./main.out
+```
